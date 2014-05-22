@@ -93,18 +93,33 @@ static int PV[] = {
 };
 
 class state_t {
-    unsigned char t_; 
+    //VARIABLE QUE CONTROLA LAS PERMUTACIONES DE LAS 4 PIEZAS CENTRALES
+    unsigned char t_;
+    //CONTROLA LAS CASILLAS LIBRES INVERSAMENTE (free_ = 0 ==> TODAS LIBRES)
+    //SE BASA EN LAS POTENCIAS DE 2 PARA DETERMINAR CUALES CASILLAS ESTAN LIBRES
     unsigned free_;
+    //SIMILAR A FREE, PERO DETERMINA EL COLOR DE LAS FICHAS DADAS UNAS CASILLAS
+    //OCUPADAS
     unsigned pos_;
 
   public:
+    //STATE COMIENZA EN LA PERMUTACION 6, LA CUAL CORRESPONDE CON EL ESTADO BASE
+    //INICIAL DE UN TABLERO DE OTHELLO. TODAS LAS CASILLAS ESTAN LIBRES
     explicit state_t(unsigned char t = 6) : t_(t), free_(0), pos_(0) { }
 
+    //GETTERS
     unsigned char t() const { return t_; }
     unsigned free() const { return free_; }
     unsigned pos() const { return pos_; }
+
+    //FUNCION DE HASH. EL USO DEL XOR ASEGURA UNIDAD
     size_t hash() const { return free_ ^ pos_ ^ t_; }
 
+    //DETERMINA SI UNA CASILLA(pos) CONTIENE UN COLOR(color) DADO. SI SE LE PASA POS
+    //MENOR A 4 RETORNA TRUE DEPENDIENDO SI ALGUNA DE LAS 4 FICHAS CENTRALES
+    //ES DE CIERTO COLOR
+    //EJ: SI SE PASA TRUE Y 0, RETORNA TRUE SI LA FICHA SUPERIOR IZQUIERDA ES
+    //NEGRA
     bool is_color(bool color, int pos) const {
         if( color )
             return pos < 4 ? t_ & (1 << pos) : pos_ & (1 << (pos - 4));
@@ -113,6 +128,7 @@ class state_t {
     }
     bool is_black(int pos) const { return is_color(true, pos); }
     bool is_white(int pos) const { return is_color(false, pos); }
+
     bool is_free(int pos) const { return pos < 4 ? false : !(free_ & (1 << pos - 4)); }
     bool is_full() const { return ~free_ == 0; }
 
