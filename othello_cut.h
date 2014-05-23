@@ -104,7 +104,8 @@ class state_t {
 
   public:
     //STATE COMIENZA EN LA PERMUTACION 6, LA CUAL CORRESPONDE CON EL ESTADO BASE
-    //INICIAL DE UN TABLERO DE OTHELLO. TODAS LAS CASILLAS ESTAN LIBRES
+    //INICIAL DE UN TABLERO DE OTHELLO. TODAS LAS CASILLAS QUE NO SEAN CENTRALES
+    //ESTAN LIBRES
     explicit state_t(unsigned char t = 6) : t_(t), free_(0), pos_(0) { }
 
     //GETTERS
@@ -116,10 +117,9 @@ class state_t {
     size_t hash() const { return free_ ^ pos_ ^ t_; }
 
     //DETERMINA SI UNA CASILLA(pos) CONTIENE UN COLOR(color) DADO. SI SE LE PASA POS
-    //MENOR A 4 RETORNA TRUE DEPENDIENDO SI ALGUNA DE LAS 4 FICHAS CENTRALES
-    //ES DE CIERTO COLOR
-    //EJ: SI SE PASA TRUE Y 0, RETORNA TRUE SI LA FICHA SUPERIOR IZQUIERDA ES
-    //NEGRA
+    //MENOR A 4 RETORNA TRUE DEPENDIENDO SI ALGUNA DE LAS 4 FICHAS CENTRALES ES
+    //DE CIERTO COLOR. EJ: SI SE USA TRUE Y 0, SE ESTA DETERMINANDO SI LA FICHA
+    //CENTRAL SUPERIOR IZQUIERDA ES NEGRA
     bool is_color(bool color, int pos) const {
         if( color )
             return pos < 4 ? t_ & (1 << pos) : pos_ & (1 << (pos - 4));
@@ -129,19 +129,43 @@ class state_t {
     bool is_black(int pos) const { return is_color(true, pos); }
     bool is_white(int pos) const { return is_color(false, pos); }
 
+    //VERIFICA SI UNA CASILLA DADA ESTA LIBRE. DE NUEVO, LOS VALORES MENORES A 4
+    //REPRESENTAN LAS CASILLAS CENTRALES. ÉSTAS SIEMPRE ESTAN OCUPADAS
     bool is_free(int pos) const { return pos < 4 ? false : !(free_ & (1 << pos - 4)); }
+
+    //VERIFICA SI EL TABLERO ESTA LLENO. FUNCIONA PORQUE EL MAYOR VALOR QUE
+    //free_ PUEDE TOMAR ES 2^32 - 1, QUE ES JUSTAMENTE EL MAYOR UNSIGNED QUE SE
+    //PUEDE REPRESENTAR, POR LO TANTO HACER UN NOR LOGICO CAMBIARIA TODOS LOS
+    //BITS DE 1 A 0 Y CONVERTIRIA EL NUMERO EN 0
     bool is_full() const { return ~free_ == 0; }
 
+    //CALCULA EL VALOR DE LA HEURISTICA DEL TABLERO
     int value() const;
+ 
+    //DETERMINA SI EL TABLERO ESTA EN UN ESTADO DE FINALIZACION DEL JUEGO
     bool terminal() const;
+
+    //DETERMINA SI COLOCAR UNA FICHA EN ESA POSICION ES LEGAL
     bool outflank(bool color, int pos) const;
+
+    //DETERMINA SI EL MOVIMIENTO ES LEGAL YA SEA PARA LAS NEGRAS O LAS BLANCAS.
+    //NOTESE QUE RETORNA TRUE SI POS ES IGUAL A 36, LA CUAL ES UNA CASILLA FUERA
+    //DEL TABLERO. ESTO ES ASI PORQUE TAMBIEN EXISTE LA JUGADA DE PASS. LA
+    //POSICION 36 TAMBIEN REPRESENTA PASS Y SIEMPRE ES UNA JUGADA LEGAL
     bool is_black_move(int pos) const { return (pos == DIM) || outflank(true, pos); }
     bool is_white_move(int pos) const { return (pos == DIM) || outflank(false, pos); }
 
+    //COLOCA UNA PIEZA DE CIERTO COLOR EN EL TABLERO
     void set_color(bool color, int pos);
+
+    //MUEVE UNA PIEZA EN EL TABLERO(COMPUTA LOS CAMBIOS DE COLOR OCASIONADOS POR
+    //UNA JUGADA)
     state_t move(bool color, int pos) const;
     state_t black_move(int pos) { return move(true, pos); }
     state_t white_move(int pos) { return move(false, pos); }
+
+    //OBTIENE UNA JUGADA AL AZAR, CALCULANDO PRIMERO UN VECTOR DE JUGADAS
+    //LEGALES
     int get_random_move(bool color) {
         std::vector<int> valid_moves;
         for( int pos = 0; pos < DIM; ++pos ) {
@@ -152,12 +176,19 @@ class state_t {
         return valid_moves.empty() ? -1 : valid_moves[lrand48() % valid_moves.size()];
     }
 
+    //OPERADOR PARA DETERMINAR SI UN TABLERO ES "MENOR" A OTRO, ES DECIR SI UN
+    //TABLERO VA MAS AVANZADO EN JUGADAS QUE OTRO. ESTO SE DETERMINA POR LA
+    //CANTIDAD DE PIEZAS EN EL TABLERO
     bool operator<(const state_t &s) const {
         return (free_ < s.free_) || ((free_ == s.free_) && (pos_ < s.pos_));
     }
+
+    //OPERADOR QUE DETERMINA SI DOS TABLEROS SON IGUALES
     bool operator==(const state_t &state) const {
         return (state.t_ == t_) && (state.free_ == free_) && (state.pos_ == pos_);
     }
+
+    //ASIGNA EL CONTENIDO DE UN TABLERO A OTRO TABLERO
     const state_t& operator=(const state_t &state) {
         t_ = state.t_;
         free_ = state.free_;
@@ -165,10 +196,14 @@ class state_t {
         return *this;
     }
 
+    //IMPRIME EL CONTENIDO DEL TABLERO
     void print(std::ostream &os, int depth = 0) const;
+    //IMPRIME LA REPRESENTACION DE BITS DE CADA COMPONENTE DEL TABLERO
     void print_bits(std::ostream &os) const;
 };
 
+//CALCULA EL VALOR DE LA HEURISTICA DEL TABLERO. PARA HACER ESTO SUMA 1 POR CADA
+//PIEZA NEGRA Y RESTA 1 POR CADA PIEZA BLANCA
 inline int state_t::value() const {
     int v = 0;
     for( int pos = 0; pos < DIM; ++pos ) {
@@ -178,6 +213,8 @@ inline int state_t::value() const {
     return v;
 }
 
+//DETERMINA SI EL JUEGO YA TERMINO. PRIMERO REVISA SI EL TABLERO ESTA LLENO Y
+//LUEGO SI HAY MAS JUGADAS LEGALES
 inline bool state_t::terminal() const {
     if( is_full() ) return true;
     for( unsigned b = 0; b < DIM; ++b )
@@ -185,26 +222,50 @@ inline bool state_t::terminal() const {
     return true;
 }
 
+//DETERMINA SI LA CASILLA DADA ESTA EN UNA POSICION TAL QUE HAY UNA O MAS FICHAS
+//DEL COLOR CONTRARIO HACIA ALGUNOS DE SUS LADOS Y LUEGO HAYA UNA FICHA DEL
+//MISMO COLOR DADO. SUPONGO QUE ESTO DETERMINA SI COLOCAR UNA FICHA DEL COLOR
+//DADO EN LA CASILLA DADA OCASIONARA CAMBIOS DE COLORES EN LAS FICHAS DEL
+//TABLERO POR REGLAS DE OTHELLO. EN OTRAS PALABRAS, DETERMINA SI UN MOVIMIENTO
+//DADO ES LEGAL
 inline bool state_t::outflank(bool color, int pos) const {
+    //SI LA CASILLA ESTA LIBRE, RETORNA FALSO
     if( !is_free(pos) ) return false;
 
+    //VALOR QUE SE USA PARA RECORRER EL TABLERO. ES UN APUNTADOR PORQUE
+    //RECORREMOS ARREGLOS
     const int *p = 0;
 
     // Find if some stones are outflanked
 
     // Check rows
+    //EMPEZAMOS AL INICIO DE LA FILA Y NOS MOVEMOS HACIA LA POSICION EN ESA FILA
+    //QUE CONTIENE A LA POSICION QUE COLOCAMOS DE PARAMETRO
     const int *x = rows[pos - 4];
     while( *x != pos ) ++x;
+
+    //SE CHEQUEA QUE NUESTRA CASILLA NO ESTE PEGADA A LA PARED DERECHA DEL
+    //TABLERO
     if( *(x+1) != -1 ) {
+        //SE CHEQUEA CADA CASILLA A LA DERECHA DE LA NUESTRA, HASTA QUE OCURRA
+        //UNA DE TRES COSAS: LLEGAMOS A LA PARED DERECHA, LA CASILLA ESTA LIBRE
+        //O LA PIEZA QUE ESTA SEA DEL MISMO COLOR QUE EL COLOR QUE INTRODUJIMOS
+        //COMO PARAMETRO
         for( p = x + 1; (*p != -1) && !is_free(*p) && (color ^ is_black(*p)); ++p );
+        //EVENTUALMENTE NOS DETENDREMOS EN UNA CASILLA. SI NO ESTAMOS EN LA
+        //PARED DERECHA Y LA CASILLA ESTA OCUPADA, DEVOLVEMOS TRUE
         if( (p > x + 1) && (*p != -1) && !is_free(*p) ) return true;
     }
+
+    //SIMILAR AL PASO ANTERIOR, PERO ESTA VEZ SE CHEQUEA SI ESTAMOS EN LA PARED
+    //IZQUIERDA, Y VAMOS CHEQUEANDO LAS FICHAS HACIA LA IZQUIERDA
     if( x != rows[pos - 4] ) {
         for( p = x - 1; (p >= rows[pos - 4]) && !is_free(*p) && (color ^ is_black(*p)); --p );
         if( (p < x - 1) && (p >= rows[pos - 4]) && !is_free(*p) ) return true;
     }
 
     // Check columns
+    //SIMILAR A LAS FILAS, PERO CON LAS COLUMNAS
     x = cols[pos - 4];
     while( *x != pos ) ++x;
     if( *(x+1) != -1 ) {
@@ -221,6 +282,20 @@ inline bool state_t::outflank(bool color, int pos) const {
     return false;
 }
 
+//COLOCA UNA PIEZA DE CIERTO COLOR EN EL TABLERO. SE EXPLICA LA LOGICA DEL
+//ALGORITMO PARA CADA COLOR
+
+//NEGRAS: SI LA CASILLA ES MENOR A 4, ES UNA DE LAS PIEZAS CENTRALES, ES DECIR
+//QUE SE DEBE MODIFICAR t_. LA MODIFICACION ES PRENDER EL BIT QUE REPRESENTA A
+//LA CASILLA QUE SE QUIERE EN LA CONFIGURACION ACTUAL, LO CUAL SE LOGRA CON UN
+//OR. SI LA CASILLA ES MAYOR O IGUAL A 4, SE DEBE PRENDER EL BIT CORRESPONDIENTE
+//TANTO EN free_ COMO EN pos_, PUES FREE INDICA QUE HAY UNA PIEZA ALLI Y POS
+//INDICA QUE DICHA PIEZA ES NEGRA
+
+//BLANCAS: SI LA CASILLA ES MENOR A 4, SE DEBE APAGAR EL BIT CORRESPONDIENTE,
+//POR LO QUE SE USA AND(APAGAR BITS) Y NOR(REVERSAR BITS PARA APAGAR LOS BITS
+//CORRECTOS). PARA CASILLAS MAYORES A 4, LA LOGICA ES SIMILAR A CON LAS NEGRAS,
+//SOLO QUE PARA EL CASO DE POS SE DEBE APAGAR EL BIT EN LUGAR DE PRENDERLO
 inline void state_t::set_color(bool color, int pos) {
     if( color ) {
         if( pos < 4 ) {
@@ -239,16 +314,23 @@ inline void state_t::set_color(bool color, int pos) {
     }
 }
 
+//RETORNA EL ESTADO QUE REPRESENTA UNA JUGADA DADA POR EL COLOR Y LA POSICION
+//PASADAS COMO ARGUMENTO
 inline state_t state_t::move(bool color, int pos) const {
     state_t s(*this);
+    //RETORNAR EL MISMO ESTADO SI LA POSICION ES PASS
     if( pos >= DIM ) return s;
 
+    //VERIFICAR QUE LA JUGADA ES LEGAL Y COLOCAR LA PIEZA
     assert(outflank(color, pos));
     s.set_color(color, pos);
 
     // Flip color of outflanked stones
 
     // Process rows
+    //SE CHEQUEA LA FILA DE LA NUEVA PIEZA COLOCADA. POR CADA PIEZA QUE ESTE
+    //ENTRE ESTA NUEVA PIEZA Y LA SIGUIENTE PIEZA DEL MISMO COLOR, SE CAMBIA DE
+    //COLOR
     const int *p = 0, *x = rows[pos - 4];
     while( *x != pos ) ++x;
     if( *(x+1) != -1 ) {
@@ -265,6 +347,7 @@ inline state_t state_t::move(bool color, int pos) const {
     }
 
     // Process columns
+    //SE HACE LO MISMO CON LAS COLUMNAS
     x = cols[pos - 4];
     while( *x != pos ) ++x;
     if( *(x+1) != -1 ) {
@@ -285,11 +368,15 @@ inline state_t state_t::move(bool color, int pos) const {
     return s;
 }
 
+//IMPRIME EL ESTADO DEL TABLERO
 inline void state_t::print(std::ostream &os, int depth) const {
+    //HEADER
     os << "+";
     for( int j = 0; j < N; ++j ) os << "-";
     os << "+" << std::endl;
 
+    //LA POSICION INICIAL. NOTESE QUE EL CICLO DIFERENCIA ENTRE LAS PIEZAS
+    //CENTRALES Y LAS QUE NO LO SON. POR ESO SE EMPIEZA EN 4 Y NO EN 0
     int pos = 4;
     for( int i = 0; i < N; ++i ) {
         os << "|";
@@ -306,11 +393,14 @@ inline void state_t::print(std::ostream &os, int depth) const {
         os << "|" << std::endl;
     }
 
+    //FOOTER
     os << "+";
     for( int j = 0; j < N; ++j ) os << "-";
     os << "+" << std::endl;
 }
 
+//SE IMPRIME LA REPRESENTACION POR BITS DEL TABLERO. PRIMERO SE IMPRIME t_,
+//LUEGO pos_ Y POR ULTIMO free_
 inline void state_t::print_bits(std::ostream &os) const {
     for( int i = 3; i >= 0; --i ) os << (t_ & (1 << i) ? '1' : '0');
     os << ":";
@@ -319,6 +409,7 @@ inline void state_t::print_bits(std::ostream &os) const {
     for( int i = 31; i >= 0; --i ) os << (free_ & (1 << i) ? '1' : '0');
 }
 
+//OVERLOAD DE OPERADOR PARA FACILITAR LA IMPRESION DE DATOS
 inline std::ostream& operator<<(std::ostream &os, const state_t &state) {
     state.print(os);
     return os;
