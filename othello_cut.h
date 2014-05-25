@@ -176,6 +176,17 @@ class state_t {
         return valid_moves.empty() ? -1 : valid_moves[lrand48() % valid_moves.size()];
     }
 
+    //OBTIENE TODOS LOS MOVIMIENTOS LEGALES
+    std::vector<int> getChildren(bool color){
+       std::vector<int> valid_states;
+       for(int pos = 0; pos <= DIM; ++pos){
+         if( (color && is_black_move(pos)) || (!color && is_white_move(pos)) ){
+             valid_states.push_back(pos);
+         }
+       }
+       return valid_states;
+    }
+
     //OPERADOR PARA DETERMINAR SI UN TABLERO ES "MENOR" A OTRO, ES DECIR SI UN
     //TABLERO VA MAS AVANZADO EN JUGADAS QUE OTRO. ESTO SE DETERMINA POR LA
     //CANTIDAD DE PIEZAS EN EL TABLERO
