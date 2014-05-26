@@ -58,7 +58,7 @@ template<typename T> inline T abs(const T a) {
 
 }; // end of namespace
 
-#undef DEBUG
+//#undef DEBUG
 
 #endif
 
