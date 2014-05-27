@@ -179,11 +179,15 @@ class state_t {
     //OBTIENE TODOS LOS MOVIMIENTOS LEGALES
     std::vector<int> getChildren(bool color){
        std::vector<int> valid_states;
-       for(int pos = 0; pos <= DIM; ++pos){
+       for(int pos = 0; pos < DIM; ++pos){
          if( (color && is_black_move(pos)) || (!color && is_white_move(pos)) ){
              valid_states.push_back(pos);
          }
        }
+       if(valid_states.empty()){
+         valid_states.push_back(36);
+       }
+
        return valid_states;
     }
 
