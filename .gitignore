@@ -19,3 +19,11 @@
 *.exe
 *.out
 *.app
+
+# Emcas 
+*~
+proyectoIA2/
+.gitignore
+mainBonet
+megaTest
+negaTest

@@ -3,7 +3,6 @@
 using namespace std;
 
 int main(){
-
   for(int cur=33; cur > 0; --cur){
     state_t init;
     bool curPlay = true;
