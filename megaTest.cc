@@ -11,7 +11,7 @@ int main(){
 // i es impar -> true
 // i es par -> false
   int i;
-  for(i=0;i<20;++i){
+  for(i=0;i<33;++i){
     init = init.move(!curPlay,PV[i]);
     curPlay = !curPlay;
   }
