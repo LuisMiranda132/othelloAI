@@ -2,7 +2,6 @@ template<class T> class Node{
 
   public:
     T state;
-    //And == true, Or == false
     bool type;
     Node* parent;
     int action;
