@@ -11,7 +11,6 @@ public:
 	int bestValue;
 		
 	if((depth == 0) || (state.terminal())){
-	    
 	    return state.value();
 	}
 	
