@@ -16,11 +16,11 @@ int negaScout(state_t pos,bool color, int depth, int alpha, int beta){
 		if (i > 0) {
 			score = -negaScout(s, !color, depth-1, -alpha-1, -alpha); //null window search
 			if (alpha < score && score < beta) {
-				score = -negaScout2(s, !color, depth-1, -beta, -score); 
+				score = -negaScout(s, !color, depth-1, -beta, -score); 
 			}
 		}
 		else {
-			score = -negaScout2s, !color, depth-1, -beta, -alpha); //evaluacion de la rama izquierda
+		    score = -negaScout(s, !color, depth-1, -beta, -alpha); //evaluacion de la rama izquierda
 		}
 		
 		alpha = Utils::max(score,alpha);
