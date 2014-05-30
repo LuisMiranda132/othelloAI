@@ -21,10 +21,12 @@ int negaScout(state_t pos,bool color, int depth, int alpha, int beta){
 		}
 		else {
 		    score = -negaScout(s, !color, depth-1, -beta, -alpha); //evaluacion de la rama izquierda
+
 		}
 		
 		alpha = Utils::max(score,alpha);
-		
+
+
 		if(alpha >= beta) return alpha; //poda
 	}
 	
