@@ -1,9 +1,8 @@
-minimax:
+main:
 	g++ -o alpha-beta alpha-beta.cc
 	g++ -o minimax minimax.cc
-
-negaScout:
+	g++ -o negaTest negaTest.cc
 	g++ -o negaScout negaScout.cc
 	g++ -o scout scout.cc
 clean:
-	rm alpha-beta minimax negaScout scout
+	rm alpha-beta minimax negaScout scout negaTest

@@ -14,7 +14,7 @@ bool testG(state_t pos, int depth, int v, bool max)  {
 		for (i = 0; i < succ.size(); ++i) { 
 			if (testG(pos.move(max,succ[i]), depth-1, v, !max)) {
 				return 1;
-			}nega
+			}
 		}
 	return 0;
 	
