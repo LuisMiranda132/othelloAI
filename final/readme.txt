@@ -6,7 +6,6 @@ Minimax:
 	"./minimax".
 
 	Cuando se ejecuten estos calcularan los valores de la heuristica partiendo
-<<<<<<< HEAD
 	del ultimo movimiento optimo e iran subiendo hasta el primer movimiento.
 
 Scout y negaScout:
@@ -17,8 +16,7 @@ Scout y negaScout:
 
 	Al igual que con las implementaciones de Minimax, se partira del ultimo 
 	movimiento optimo(mas sencillo), subiendo hasta el primero(mas complejo).
-=======
-	del ultimo movimiento optimo e iran subiendo hasta el primero movimiento
+
 
 Negamax:
 
@@ -28,4 +26,4 @@ Negamax:
 
         Para correr negaTest con negamax estandar, usar ./negaTest -n. Para
         correr con negamax alfabeta, usar ./negaTest -ab
->>>>>>> 94bfb3ca16a4411893fcf09c08ab9291be7d3457
+
